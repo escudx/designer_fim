@@ -4953,6 +4953,9 @@ class App(ctk.CTk):
             self.project = project
             self.answers: Dict[str, Any] = {}
             self.controller_field_ids: Set[str] = self._collect_controller_fields()
+            self.field_by_id: Dict[str, Field] = {}
+            self.dependents_by_field: Dict[str, List[Field]] = defaultdict(list)
+            self._rebuild_field_indexes()
             top = ctk.CTkFrame(self, fg_color="transparent"); top.pack(side="top", fill="x", padx=10, pady=8)
             ctk.CTkLabel(top, text="Tarefa:").pack(side="left", padx=(0, 6))
 
@@ -4991,6 +4994,32 @@ class App(ctk.CTk):
                 pass
             return controllers
 
+        def _rebuild_field_indexes(self) -> None:
+            self.field_by_id.clear()
+            self.dependents_by_field.clear()
+
+            for task in self.project.tasks:
+                for field in task.fields:
+                    self.field_by_id[field.id] = field
+
+            for task in self.project.tasks:
+                for field in task.fields:
+                    for cond in getattr(field, "cond", []) or []:
+                        if cond.src_field:
+                            self.dependents_by_field.setdefault(cond.src_field, []).append(field)
+
+        def _get_field(self, field_id: Optional[str]) -> Optional[Field]:
+            if not field_id:
+                return None
+            return self.field_by_id.get(field_id)
+
+        def _display_key_for(self, field: Field, *, readonly: bool, override: Optional[str] = None) -> str:
+            if override:
+                return override
+            if readonly and field.origin_field:
+                return field.origin_field
+            return field.id
+
         def _maybe_rerender(self, field_id: Optional[str]) -> None:
             if field_id and field_id in self.controller_field_ids:
                 self._render()
@@ -5002,6 +5031,7 @@ class App(ctk.CTk):
         def on_model_changed(self):
             current_ids: Set[str] = {f.id for t in self.project.tasks for f in t.fields}
             self.controller_field_ids = self._collect_controller_fields()
+            self._rebuild_field_indexes()
 
             new_answers: Dict[str, Any] = {}
             for k, v in self.answers.items():
@@ -5162,19 +5192,45 @@ class App(ctk.CTk):
                         justify="left",
                     ).pack(fill="x", padx=8, pady=(0, 8))
 
-            for f in visible_fields:
-                row = ctk.CTkFrame(self.body, fg_color="transparent"); row.pack(fill="x", pady=8)
-                name_text = f.name
-                if f.required: name_text += " (*Obrigatório*)"
-                if f.readonly: name_text += " [Só leitura]"
+
+            def update_answer(key: str, value: Any, *, rerender: bool = False) -> None:
+                if value is None or (isinstance(value, str) and value == ""):
+                    self.answers.pop(key, None)
+                else:
+                    self.answers[key] = value
+                if rerender:
+                    self._maybe_rerender(key)
+
+            def render_descendants(source_field_id: str, indent: int, visited: Set[str]):
+                if source_field_id in visited:
+                    return
+                visited.add(source_field_id)
+                for child in self.dependents_by_field.get(source_field_id, []):
+                    if not self._is_visible(child):
+                        continue
+                    render_field(child, indent=indent, readonly_override=True, display_key_override=child.id, visited=visited)
+                    render_descendants(child.id, indent + 1, visited)
+
+            def render_field(field: Field, indent: int = 0, readonly_override: Optional[bool] = None, display_key_override: Optional[str] = None, visited: Optional[Set[str]] = None):
+                readonly = readonly_override if readonly_override is not None else field.readonly
+                display_key = self._display_key_for(field, readonly=readonly, override=display_key_override)
+                storage_key = field.id
+
+                container = ctk.CTkFrame(self.body, fg_color="transparent")
+                container.pack(fill="x", pady=8, padx=(indent * 24, 0))
+                row = ctk.CTkFrame(container, fg_color="transparent"); row.pack(fill="x")
+
+                name_text = field.name
+                if field.required: name_text += " (*Obrigatório*)"
+                if readonly: name_text += " [Só leitura]"
                 ctk.CTkLabel(row, text=name_text, width=320, anchor="w", fg_color="transparent", justify="left").pack(side="left")
 
-                if not f.readonly:
-                    if f.ftype in LIST_FIELD_TYPES:
-                        opts = self.master._list_options_for_field(f)
+                if not readonly:
+                    if field.ftype in LIST_FIELD_TYPES:
+                        opts = self.master._list_options_for_field(field)
 
-                        if f.ftype in MULTISELECT_FIELD_TYPES:
-                            build_multiselect(row, opts, f.id, instruction=True, width=240)
+                        if field.ftype in MULTISELECT_FIELD_TYPES:
+                            build_multiselect(row, opts, storage_key, instruction=True, width=240)
                         else:
                             placeholder = "-- Selecione --"
                             if not opts:
@@ -5182,27 +5238,26 @@ class App(ctk.CTk):
                                 om.pack(side="left")
                             else:
                                 display_opts = [placeholder] + opts
-                                var = tk.StringVar(value=self.answers.get(f.id, placeholder))
+                                var = tk.StringVar(value=self.answers.get(display_key, placeholder))
 
-                                def on_change(value, fid=f.id):
+                                def on_change(value, fid=storage_key):
                                     if value == placeholder:
-                                        self.answers.pop(fid, None)
+                                        update_answer(fid, None, rerender=True)
                                     else:
-                                        self.answers[fid] = value
-                                    self._maybe_rerender(fid)
+                                        update_answer(fid, value, rerender=True)
 
                                 om = ctk.CTkOptionMenu(
                                     row,
                                     values=display_opts,
                                     variable=var,
-                                    command=lambda val, fid=f.id: on_change(val, fid),
+                                    command=lambda val, fid=storage_key: on_change(val, fid),
                                 )
                                 base = _solid_color()
                                 om.configure(fg_color=base, button_color=base, button_hover_color=base)
                                 om.pack(side="left")
 
-                    elif f.ftype == "Numérico":
-                        prev_value = str(self.answers.get(f.id, ""))
+                    elif field.ftype == "Numérico":
+                        prev_value = str(self.answers.get(display_key, ""))
                         num_var = tk.StringVar(value=prev_value)
 
                         def validate_numeric(new_value: str) -> bool:
@@ -5222,30 +5277,13 @@ class App(ctk.CTk):
                         )
                         ent.pack(side="left")
 
-                        def on_numeric_focus_out(_event=None, fid=f.id, var=num_var):
-                            value = var.get().strip()
-                            if not value:
-                                self.answers.pop(fid, None)
-                                return
-                            if not re.fullmatch(r"-?\d*(?:[.,]\d+)?", value):
-                                messagebox.showwarning(
-                                    "Valor inválido",
-                                    "Informe apenas números (use vírgula ou ponto para decimais).",
-                                    parent=self,
-                                )
-                                previous = str(self.answers.get(fid, ""))
-                                var.set(previous)
-                                if previous:
-                                    self.answers[fid] = previous
-                                else:
-                                    self.answers.pop(fid, None)
-                                return
-                            self.answers[fid] = value
+                        def on_numeric_change(_event=None, fid=storage_key, var=num_var):
+                            update_answer(fid, var.get(), rerender=True)
 
-                        ent.bind("<FocusOut>", on_numeric_focus_out)
+                        ent.bind("<KeyRelease>", on_numeric_change)
 
-                    elif f.ftype == "Data":
-                        prev_value = str(self.answers.get(f.id, ""))
+                    elif field.ftype == "Data":
+                        prev_value = str(self.answers.get(display_key, ""))
                         date_var = tk.StringVar(value=prev_value)
 
                         def validate_date_input(new_value: str) -> bool:
@@ -5283,10 +5321,15 @@ class App(ctk.CTk):
                         date_var.trace_add("write", apply_date_mask)
                         apply_date_mask()
 
-                        def on_date_focus_out(_event=None, fid=f.id, var=date_var):
+                        def on_date_change(_event=None, fid=storage_key, var=date_var):
+                            update_answer(fid, var.get(), rerender=True)
+
+                        ent.bind("<KeyRelease>", on_date_change)
+
+                        def on_date_focus_out(_event=None, fid=storage_key, var=date_var):
                             raw = var.get().strip()
                             if not raw:
-                                self.answers.pop(fid, None)
+                                update_answer(fid, None, rerender=True)
                                 return
                             digits = re.sub(r"\D", "", raw)
                             formatted = raw
@@ -5303,44 +5346,47 @@ class App(ctk.CTk):
                                 previous = str(self.answers.get(fid, ""))
                                 var.set(previous)
                                 if previous:
-                                    self.answers[fid] = previous
+                                    update_answer(fid, previous)
                                 else:
-                                    self.answers.pop(fid, None)
+                                    update_answer(fid, None)
                                 return
                             var.set(formatted)
-                            self.answers[fid] = formatted
-                            self._maybe_rerender(fid)
+                            update_answer(fid, formatted, rerender=True)
 
                         ent.bind("<FocusOut>", on_date_focus_out)
 
-                    elif f.ftype == "Anexo":
+                    elif field.ftype == "Anexo":
                         card = ctk.CTkFrame(row, fg_color="#222222", corner_radius=6); card.pack(side="left", padx=4, fill="x", expand=True)
-                        current_value = self.answers.get(f.id, ""); value_var = tk.StringVar(value=current_value or "Nenhum arquivo selecionado")
-                        def choose_file(fid=f.id, var=value_var):
+                        current_value = self.answers.get(display_key, ""); value_var = tk.StringVar(value=current_value or "Nenhum arquivo selecionado")
+
+                        def choose_file(fid=storage_key, var=value_var):
                             path = filedialog.askopenfilename()
-                            if path: self.answers[fid] = path; var.set(path)
+                            if path:
+                                update_answer(fid, path, rerender=True)
+                                var.set(path)
+
                         ctk.CTkButton(card, text="Selecionar arquivo...", command=choose_file, width=220,).pack(anchor="w", padx=8, pady=(6, 4))
                         ctk.CTkLabel(card, textvariable=value_var, anchor="w", text_color="#c5cdd9", justify="left",).pack(anchor="w", padx=8)
                         ctk.CTkLabel(card, text="Apenas visualização no simulador.", anchor="w", text_color="#9aa4b2",).pack(anchor="w", padx=8, pady=(2, 6))
 
-                    elif f.ftype == "Área de texto":
-                        tb = ctk.CTkTextbox(row, width=500, height=90); tb.insert("1.0", self.answers.get(f.id, "")); tb.pack(side="left")
-                        tb.bind("<FocusOut>", lambda e, fid=f.id, w=tb: self.answers.__setitem__(fid, w.get("1.0", tk.END).strip()))
+                    elif field.ftype == "Área de texto":
+                        tb = ctk.CTkTextbox(row, width=500, height=90); tb.insert("1.0", self.answers.get(display_key, "")); tb.pack(side="left")
+                        tb.bind("<KeyRelease>", lambda e, fid=storage_key, w=tb: update_answer(fid, w.get("1.0", tk.END).strip(), rerender=True))
 
-                    elif f.ftype == "Componente do sistema":
+                    elif field.ftype == "Componente do sistema":
                         comp_frame = ctk.CTkFrame(row, fg_color="#222222", corner_radius=6); comp_frame.pack(side="left", padx=4, fill="x", expand=True)
-                        ctk.CTkLabel(comp_frame, text=f.note or "Simular valor de saída do componente", anchor="w").pack(padx=8, pady=(6, 2), anchor="w")
-                        ent = ctk.CTkEntry(comp_frame); ent.insert(0, self.answers.get(f.id, "")); ent.pack(fill="x", padx=8, pady=(0, 6))
-                        ent.bind("<FocusOut>", lambda e, fid=f.id, w=ent: (self.answers.__setitem__(fid, w.get()), self._maybe_rerender(fid)))
+                        ctk.CTkLabel(comp_frame, text=field.note or "Simular valor de saída do componente", anchor="w").pack(padx=8, pady=(6, 2), anchor="w")
+                        ent = ctk.CTkEntry(comp_frame); ent.insert(0, self.answers.get(display_key, "")); ent.pack(fill="x", padx=8, pady=(0, 6))
+                        ent.bind("<KeyRelease>", lambda e, fid=storage_key, w=ent: (update_answer(fid, w.get(), rerender=True)))
 
-                    elif f.ftype == "Objeto":
+                    elif field.ftype == "Objeto":
                         obj_box = ctk.CTkFrame(row, fg_color="#222222", corner_radius=6); obj_box.pack(side="left", padx=4, fill="x", expand=True)
                         title = self.project.object_type or "Objeto"
                         ctk.CTkLabel(obj_box, text=title, anchor="center", justify="center").pack(padx=8, pady=(6, 2), fill="x")
 
                         for ofd in self.project.object_schema:
                             if not ofd.readonly:
-                                sub_key = f"{f.id}__{ofd.name}"; sub_row = ctk.CTkFrame(obj_box, fg_color="transparent"); sub_row.pack(fill="x", padx=8, pady=2)
+                                sub_key = f"{storage_key}__{ofd.name}"; sub_row = ctk.CTkFrame(obj_box, fg_color="transparent"); sub_row.pack(fill="x", padx=8, pady=2)
                                 sub_name = ofd.name
                                 if ofd.required: sub_name += " (*Obrigatório*)"
                                 ctk.CTkLabel(sub_row, text=sub_name, width=180, anchor="w", justify="left").pack(side="left")
@@ -5360,10 +5406,9 @@ class App(ctk.CTk):
 
                                             def on_sub_change(value, skey=sub_key):
                                                 if value == "-- Selecione --":
-                                                    self.answers.pop(skey, None)
+                                                    update_answer(skey, None, rerender=True)
                                                 else:
-                                                    self.answers[skey] = value
-                                                self._maybe_rerender(skey)
+                                                    update_answer(skey, value, rerender=True)
 
                                             om = ctk.CTkOptionMenu(
                                                 sub_row,
@@ -5374,47 +5419,54 @@ class App(ctk.CTk):
                                             om.pack(side="left", fill="x", expand=True)
                                 else:
                                     ent = ctk.CTkEntry(sub_row); ent.insert(0, self.answers.get(sub_key, "")); ent.pack(side="left", fill="x", expand=True)
-                                    ent.bind("<FocusOut>", lambda e, skey=sub_key, w=ent: (self.answers.__setitem__(skey, w.get()), self._maybe_rerender(skey)))
+                                    ent.bind("<KeyRelease>", lambda e, skey=sub_key, w=ent: (update_answer(skey, w.get(), rerender=True)))
 
                         if not self.project.object_schema: ctk.CTkLabel(obj_box, text="Conteúdo mapeado externamente (sem esquema).", anchor="w").pack(padx=8, pady=(0, 6))
                         elif all(ofd.readonly for ofd in self.project.object_schema): ctk.CTkLabel(obj_box, text="Todos os campos do Objeto são 'Só Leitura'.", anchor="w").pack(padx=8, pady=(0, 6))
 
                     else:
-                        ent = ctk.CTkEntry(row, width=500); ent.insert(0, self.answers.get(f.id, "")); ent.pack(side="left")
-                        ent.bind("<FocusOut>", lambda e, fid=f.id, w=ent: self.answers.__setitem__(fid, w.get()))
+                        ent = ctk.CTkEntry(row, width=500); ent.insert(0, self.answers.get(display_key, "")); ent.pack(side="left")
+                        ent.bind("<KeyRelease>", lambda e, fid=storage_key, w=ent: update_answer(fid, w.get(), rerender=True))
 
                 else:
-                    if f.ftype == "Informativo":
-                        ctk.CTkLabel(row, text=f.options or f.info or "Informativo", anchor="w", justify="left").pack(side="left")
-                    elif f.ftype == "Componente do sistema":
+                    if field.ftype == "Informativo":
+                        ctk.CTkLabel(row, text=field.options or field.info or "Informativo", anchor="w", justify="left").pack(side="left")
+                    elif field.ftype == "Componente do sistema":
                         ctk.CTkLabel(row, text="Componente (Valor é gerado/externo)", anchor="w").pack(side="left")
                         ctk.CTkEntry(row, width=260, state="disabled").pack(side="left")
-                    elif f.ftype == "Objeto":
+                    elif field.ftype == "Objeto":
                         obj_box = ctk.CTkFrame(row, fg_color="#222222", corner_radius=6); obj_box.pack(side="left", padx=4, fill="x", expand=True)
                         title = self.project.object_type or "Objeto"; ctk.CTkLabel(obj_box, text=title, anchor="center", justify="center").pack(padx=8, pady=(6, 2), fill="x")
                         for ofd in self.project.object_schema:
-                             sub_val = self.answers.get(f"{f.id}__{ofd.name}", "")
+                             sub_val = self.answers.get(f"{display_key}__{ofd.name}", "")
                              if isinstance(sub_val, (list, tuple, set)):
                                  display_val = ", ".join(str(v) for v in sub_val) or "(Não preenchido)"
                              else:
                                  display_val = sub_val or "(Não preenchido)"
                              ctk.CTkLabel(obj_box, text=f"- {ofd.name}: {display_val}", anchor="w", text_color="#9aa4b2").pack(anchor="w", padx=8)
-                    elif f.ftype == "Anexo":
+                    elif field.ftype == "Anexo":
                         ctk.CTkLabel(row, text="Anexo (Só Leitura)", anchor="w").pack(side="left")
                         ctk.CTkEntry(row, width=260, state="disabled").pack(side="left")
-                    elif f.ftype in MULTISELECT_FIELD_TYPES:
-                        selected = self.answers.get(f.id, [])
+                    elif field.ftype in MULTISELECT_FIELD_TYPES:
+                        selected = self.answers.get(display_key, [])
                         if isinstance(selected, str):
                             values = [selected] if selected else []
                         else:
                             values = [str(v) for v in selected]
                         display = ", ".join(values) if values else "(Nenhuma opção selecionada)"
                         ctk.CTkLabel(row, text=display, anchor="w", justify="left").pack(side="left")
-                    elif f.ftype in LIST_FIELD_TYPES:
-                        display = str(self.answers.get(f.id, "")) or "(Não selecionado)"
+                    elif field.ftype in LIST_FIELD_TYPES:
+                        display = str(self.answers.get(display_key, "")) or "(Não selecionado)"
                         ctk.CTkLabel(row, text=display, anchor="w", justify="left").pack(side="left")
                     else:
-                        ctk.CTkEntry(row, width=260, state="disabled").pack(side="left")
+                        value = self.answers.get(display_key, "")
+                        ctk.CTkLabel(row, text=value or "(Não preenchido)", anchor="w", justify="left").pack(side="left")
+
+                if field.origin_field:
+                    render_descendants(field.origin_field, indent + 1, visited or set())
+
+            for f in visible_fields:
+                render_field(f)
 
     def open_simulator(self):
         self._commit_active_edits()
