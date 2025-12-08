@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+                       
 """
 Designer de Campos — Fluxos [v3.0] - INTEGRADO COM IMPORTADOR BPMN
 - Adicionado: Modais escuros consistentes que substituem as caixas de diálogo brancas do sistema.
@@ -15,7 +15,7 @@ Designer de Campos — Fluxos [v3.0] - INTEGRADO COM IMPORTADOR BPMN
 
 from __future__ import annotations
 import os, re, uuid, json, datetime, sys, traceback, tkinter as tk, unicodedata, importlib
-# Imports adicionados para o importador de BPMN
+                                               
 import io
 import zipfile
 import xml.etree.ElementTree as ET
@@ -55,11 +55,11 @@ except ImportError:
     ctypes = None
     wintypes = None
 
-# Visão HTML
+            
 try:
     from tkinterweb import HtmlFrame
 except Exception:
-    HtmlFrame = None  # checado ao abrir a visão HTML
+    HtmlFrame = None                                 
 
 APP_VERSION = "v3.0"
 CONFIG_PATH = os.path.join(os.path.expanduser("~"), ".designer_campos_config.json")
@@ -201,7 +201,7 @@ SHORTCUT_SECTIONS = [
     ),
 ]
 
-# --- Funções de Parsing do BPMN (Copiado do Simulador) ---
+                                                           
 def strip_ns(tag: str) -> str:
     """Remove o namespace do XML de uma tag (ex: {http://...}Task -> Task)."""
     return tag.split('}')[-1] if '}' in tag else tag
@@ -232,7 +232,7 @@ def parse_bizagi_group_by_diagram(bpm_path: str):
                     if "Diagram.xml" not in inner.namelist(): continue
                     root = ET.fromstring(inner.read("Diagram.xml"))
             except Exception:
-                diagrams_labels.append((d, d)) # Fallback em caso de erro de leitura
+                diagrams_labels.append((d, d))                                      
                 continue
 
             ns = {'xpdl': root.tag.split('}')[0].strip('{')}
@@ -345,7 +345,7 @@ def _apply_secondary_style(btn: ctk.CTkButton) -> None:
 
 
 def _animate_fade_in(win: tk.Misc, *, duration: int = 140, steps: int = 6) -> None:
-    # Versão otimizada: remove o loop de animação que bloqueia a thread
+                                                                       
     try:
         win.attributes("-alpha", 1.0)
         win.deiconify()
@@ -462,8 +462,8 @@ def _center_within(master: Optional[tk.Misc], width: int, height: int) -> Option
     except Exception:
         window_state = 'normal'
 
-    # SOLUÇÃO: Se a janela estiver maximizada ('zoomed'), usar
-    # as dimensões do monitor, pois winfo_width/height retornam '1'.
+                                                              
+                                                                    
     if window_state == 'zoomed':
         try:
             bounds = _get_monitor_bounds_for_window(target)
@@ -472,13 +472,13 @@ def _center_within(master: Optional[tk.Misc], width: int, height: int) -> Option
             master_w = bounds[2] - bounds[0]
             master_h = bounds[3] - bounds[1]
         except Exception:
-            # Fallback se a API do monitor falhar
+                                                 
             master_w = _safe_query(target.winfo_screenwidth)
             master_h = _safe_query(target.winfo_screenheight)
             master_x = 0
             master_y = 0
     else:
-        # Janela em estado 'normal', usar a lógica original (com a correção do geom_h)
+                                                                                      
         geom_w = geom_h = 0
         geom_x = geom_y = None
         try:
@@ -498,7 +498,7 @@ def _center_within(master: Optional[tk.Misc], width: int, height: int) -> Option
                     size_part = geometry.split("+", 1)[0]
                     geom_w_str, geom_h_str = size_part.split("x", 1)
                     geom_w = int(geom_w_str)
-                    geom_h = int(geom_h_str) # Correção da tentativa anterior
+                    geom_h = int(geom_h_str)                                 
             except Exception:
                 geom_w = geom_h = 0
 
@@ -730,15 +730,15 @@ def _patch_messageboxes() -> None:
         )
         return response == "Sim"
 
-    messagebox.showinfo = _show_info  # type: ignore[assignment]
-    messagebox.showwarning = _show_warning  # type: ignore[assignment]
-    messagebox.showerror = _show_error  # type: ignore[assignment]
-    messagebox.askyesno = _ask_yes_no  # type: ignore[assignment]
+    messagebox.showinfo = _show_info                            
+    messagebox.showwarning = _show_warning                            
+    messagebox.showerror = _show_error                            
+    messagebox.askyesno = _ask_yes_no                            
 
 
 _patch_messageboxes()
 
-# ===== Modelo de dados =====
+                             
 @dataclass
 class Condition:
     src_field: str
@@ -769,7 +769,7 @@ class Field:
     origin_task: Optional[str] = None
     origin_field: Optional[str] = None
     name_locked: bool = False
-    name_lock_reason: str = ""   # "", "objeto", "origem"
+    name_lock_reason: str = ""                           
     name_before_obj: str = ""
     name_before_origin: str = ""
     obj_type: str = ""
@@ -847,7 +847,7 @@ class ProjectModel:
             tasks.append(Task(id=td.get("id", _uid()), name=td.get("name", "Tarefa"), fields=fields))
         return ProjectModel(flow_name=flow_name, tasks=tasks, object_type=object_type, object_schema=object_schema)
 
-# ===== Templates locais =====
+                              
 class TemplateStore:
     def __init__(self, path: str = TEMPLATES_DB_PATH):
         self.path = path
@@ -926,7 +926,7 @@ class TemplateStore:
                 return t
         return None
 
-# ===== Menu de Contexto Customizado =====
+                                          
 class CustomContextMenu(ctk.CTkToplevel):
     def __init__(self, master, event, field: Field, app_instance: "App"):
         super().__init__(master)
@@ -1152,7 +1152,7 @@ class ShortcutOverlay(ctk.CTkToplevel):
             self.app.shortcuts_window = None
         super().destroy()
 
-# ===== UI: colunas =====
+                         
 TYPE_VALUES = [
     "Texto",
     "Área de texto",
@@ -1185,7 +1185,7 @@ MIN_W = {"move": 60, "sel": 44, "campo": 160, "tipo": 120, "origem": 160, "regra
 HEADER_ALIGN = {"move":"center", "sel":"center","campo":"w","tipo":"w","origem":"w","regras":"w","obrig":"center","soleit":"center","opts":"w","obs":"w","del":"center"}
 HEADER_PADX_LEFT = 10
 
-# ===== Classes da UI do Importador de BPMN (Copiado do Simulador) =====
+                                                                        
 class EditItemDialog(ctk.CTkToplevel):
     def __init__(self, parent, item: Dict[str, Any], item_type: str):
         super().__init__(parent)
@@ -1198,8 +1198,8 @@ class EditItemDialog(ctk.CTkToplevel):
         title = "Editar Tarefa" if item_type == "task" else "Editar Campo"
         self.title(title)
         
-        # CORREÇÃO: A chamada para centralizar e estilizar foi movida para a classe que a invoca.
-        # Isto previne o erro que deixava a janela vazia.
+                                                                                                 
+                                                         
 
         main_frame = ctk.CTkFrame(self, fg_color="transparent")
         main_frame.pack(padx=20, pady=20)
@@ -1242,7 +1242,7 @@ class BPMNImporterWindow(ctk.CTkToplevel):
         super().__init__(master)
         self.grab_set()
         self.result = None
-        self.app = master # CORREÇÃO: Guarda a referência da janela principal
+        self.app = master                                                    
 
         self.title("Importador de BPMN")
         try:
@@ -1252,7 +1252,7 @@ class BPMNImporterWindow(ctk.CTkToplevel):
         self.resizable(True, True)
         self.app._center_toplevel(self, 900, 620, transient=False)
         self.minsize(720, 520)
-        # self.app._set_dark_title_bar(self) # A _center_toplevel já faz isso
+                                                                             
 
         self.diagrams_data = {}
         self.diagram_list = []
@@ -1757,8 +1757,8 @@ class BPMNImporterWindow(ctk.CTkToplevel):
     def open_edit_dialog(self, item: Dict, item_type: str, checkbox_widget: ctk.CTkCheckBox):
         dialog = EditItemDialog(self, item, item_type)
 
-        # CORREÇÃO: centraliza usando o importador como base para evitar que a janela
-        # principal "pisque" ou seja minimizada durante a edição.
+                                                                                     
+                                                                 
         self._center_child_dialog(dialog, 450, 220 if item_type == "field" else 160)
         
         self.wait_window(dialog)
@@ -1770,7 +1770,7 @@ class BPMNImporterWindow(ctk.CTkToplevel):
                 item['campo'] = dialog.result['name']
                 item['opcoes'] = dialog.result['opcoes']
 
-            # Atualiza a interface gráfica para mostrar as alterações
+                                                                     
             self.render_tree()
 
     def confirm_selection(self):
@@ -1799,7 +1799,7 @@ class BPMNImporterWindow(ctk.CTkToplevel):
         self.destroy()
 
 
-# ===== App principal =====
+                           
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -1831,21 +1831,21 @@ class App(ctk.CTk):
         self.shortcuts_window: Optional[ShortcutOverlay] = None
         self.validator_ignored: Set[str] = set()
 
-        # --- Cache de Metadados ---
+                                    
         self._field_id_to_name: Dict[str, str] = {}
         self._task_id_to_name: Dict[str, str] = {}
         self._field_id_to_task_id: Dict[str, str] = {}
         
-        # estado da visão HTML (fases colapsadas)
+                                                 
         self._html_overview_collapsed: Set[str] = set()
 
-        # Undo/Redo
+                   
         self._undo_stack: List[dict] = []
         self._redo_stack: List[dict] = []
-        self._clipboard: Dict = {} # Alterado para Dict para armazenar a tarefa de origem
+        self._clipboard: Dict = {}                                                       
         self._UNDO_MAX = 50
 
-        # registradores UI da grade principal
+                                             
         self._resizers: List[tk.Frame] = []
         self._resizer_state: Optional[Dict[str, int]] = None
         self._resizer_guide: Optional[tk.Frame] = None
@@ -1862,28 +1862,28 @@ class App(ctk.CTk):
         self._build_table_area()
         self._bind_shortcuts()
 
-        # --- CORREÇÃO DE "GHOSTING" APÓS BLOQUEIO/SUSPENSÃO ---
-        # O evento <Map> dispara quando a janela é exibida/restaurada na tela.
-        # O evento <FocusIn> dispara quando você clica na janela.
+                                                                
+                                                                              
+                                                                 
         def _wake_up_window(event=None):
-            # Garante que a janela não esteja minimizada antes de forçar atributos
+                                                                                  
             if self.state() == 'normal':
-                # Força o Windows a reconhecer a opacidade total
+                                                                
                 if self.attributes("-alpha") < 1.0:
                     self.attributes("-alpha", 1.0)
 
-                # Opcional: Força um update visual leve para "acordar" o renderizador
-                # self.update_idletasks()
+                                                                                     
+                                         
 
-        # Vincula aos eventos de "acordar" e "focar"
+                                                    
         self.bind("<Map>", _wake_up_window)
         self.bind("<FocusIn>", _wake_up_window)
-        # -------------------------------------------------------
+                                                                 
 
         self.new_flow_blank(show_message=False)
-        self._rebuild_metadata_cache() # Inicializa o cache
+        self._rebuild_metadata_cache()                     
 
-    # --- Cache de Metadados ---
+                                
     def _rebuild_metadata_cache(self):
         """Constrói caches para buscas O(1) de nomes de tarefas e campos."""
         self._field_id_to_name.clear()
@@ -1896,12 +1896,12 @@ class App(ctk.CTk):
                 self._field_id_to_name[field.id] = field.name
                 self._field_id_to_task_id[field.id] = task.id
 
-    # ===== Menus =====
+                       
     def _build_menubar(self):
         bar = ctk.CTkFrame(self, fg_color=DARK_BG, height=34, corner_radius=0)
         bar.pack(side="top", fill="x"); bar.pack_propagate(False)
 
-        # --- Frame para menus à esquerda ---
+                                             
         left_menus = ctk.CTkFrame(bar, fg_color="transparent")
         left_menus.pack(side="left")
 
@@ -1931,7 +1931,7 @@ class App(ctk.CTk):
             "Meus templates... (Ctrl+T)": self.open_templates_dialog,
             "Salvar fluxo como template... (Ctrl+Shift-T)": self.save_flow_as_template,
             "Importar fluxo do Excel (.xlsx)...": self.import_flow_from_xlsx,
-            "Importar Tarefas de BPMN...": self.open_bpmn_importer, # PONTO DE ENTRADA ADICIONADO
+            "Importar Tarefas de BPMN...": self.open_bpmn_importer,                              
             "Baixar modelo de fluxo (.xlsx)": self.download_flow_template_xlsx,
         })
         menu(left_menus, "Objetos", {
@@ -1950,11 +1950,11 @@ class App(ctk.CTk):
             "Atalhos do teclado (F1)": lambda: self.open_shortcuts_overlay(),
         })
         
-        # --- Frame para botões de ação à direita ---
+                                                     
         right_actions = ctk.CTkFrame(bar, fg_color="transparent")
         right_actions.pack(side="right", padx=10, pady=4)
 
-        # ===== Botões com largura fixa pequena para estética =====
+                                                                   
         self.btn_copy = ctk.CTkButton(right_actions, text="Copiar Sel.", command=self._copy_selected_fields, width=110)
         self.btn_copy.pack(side="left", padx=(0, 4))
         
@@ -1964,11 +1964,11 @@ class App(ctk.CTk):
         self.btn_delete_selected = ctk.CTkButton(right_actions, text="Excluir Sel.", command=self.delete_selected_fields, width=110)
         self.btn_delete_selected.pack(side="left")
 
-    # ===== Top controls =====
+                              
     def _build_top_controls(self):
         top = ctk.CTkFrame(self, fg_color="transparent"); top.pack(side="top", fill="x", padx=10, pady=(6, 6))
 
-        # --- Controles da Esquerda ---
+                                       
         left = ctk.CTkFrame(top, fg_color="transparent"); left.pack(side="left")
         self.lbl_flow = ctk.CTkLabel(left, text="Fluxo: -"); self.lbl_flow.pack(side="left", padx=(0, 8))
         ctk.CTkButton(left, text="Renomear...", command=self.rename_flow, width=110).pack(side="left", padx=(0, 6))
@@ -1978,22 +1978,22 @@ class App(ctk.CTk):
         ctk.CTkButton(left, text="Tarefas...", command=self.open_tasks_dialog, width=90).pack(side="left", padx=(0, 6))
         ctk.CTkButton(left, text="+ Campo", command=self._add_field, width=90).pack(side="left", padx=(0, 6))
         
-        # --- Controles da Direita (Layout Revertido) ---
+                                                         
         right = ctk.CTkFrame(top, fg_color="transparent"); right.pack(side="right")
         ctk.CTkButton(right, text="Validar Fluxo", command=self.open_flow_validator, width=120).pack(side="left", padx=(0, 4))
         ctk.CTkButton(right, text="Planilha", command=self.open_overview_html, width=90).pack(side="left", padx=(0, 4))
         ctk.CTkButton(right, text="Simular", command=self.open_simulator, width=90).pack(side="left")
 
-    # ===== Lógica de Ponte do Importador de BPMN =====
+                                                       
     def open_bpmn_importer(self):
         importer_window = BPMNImporterWindow(self)
         self.wait_window(importer_window)
 
         if not importer_window.result:
-            return # Utilizador cancelou
+            return                      
 
-        # --- Iniciar transação segura ---
-        self._push_undo() # CRÍTICO: Garante a reversibilidade
+                                          
+        self._push_undo()                                     
 
         imported_data = importer_window.result
         newly_added_tasks = []
@@ -2003,26 +2003,26 @@ class App(ctk.CTk):
             self.project.flow_name = selected_diag_label
 
         for task_data in imported_data["tasks"]:
-            # Cria a nova tarefa
+                                
             new_task = Task(id=_uid(), name=task_data["name"], fields=[])
 
-            # Cria os campos para esta tarefa
+                                             
             fields_for_this_task = imported_data["fields_by_task"].get(task_data["id"], [])
             for field_data in fields_for_this_task:
                 new_field = Field(
                     id=_uid(),
                     name=field_data["campo"],
-                    ftype="Lista", # BPMN só importa campos de decisão (Lista)
+                    ftype="Lista",                                            
                     options="; ".join(field_data["opcoes"])
                 )
                 new_task.fields.append(new_field)
 
             newly_added_tasks.append(new_task)
 
-        # Adiciona as novas tarefas ao projeto (operação aditiva)
+                                                                 
         self.project.tasks.extend(newly_added_tasks)
 
-        # Atualiza a interface de forma segura
+                                              
         self._rebuild_metadata_cache()
         self._refresh_task_combo()
         self._refresh_rows()
@@ -2030,12 +2030,12 @@ class App(ctk.CTk):
 
         messagebox.showinfo("Sucesso", f"{len(newly_added_tasks)} tarefa(s) importada(s) com sucesso.")
 
-    # ===== Tabela de edição (grade principal) =====
+                                                    
     def _build_table_area(self):
         area = ctk.CTkFrame(self, fg_color="transparent")
         area.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
-        # Header
+                
         self.header_canvas = tk.Canvas(area, height=self.header_h, highlightthickness=0, bd=0, background=DARK_BG3)
         self.header_canvas.pack(side="top", fill="x")
         self.header_frame = ctk.CTkFrame(self.header_canvas, fg_color=DARK_BG3, height=self.header_h, corner_radius=0)
@@ -2043,7 +2043,7 @@ class App(ctk.CTk):
         self.header_separator = ctk.CTkFrame(area, fg_color=DARK_BG3, height=1, corner_radius=0)
         self.header_separator.pack(side="top", fill="x")
 
-        # Body + scroll
+                       
         body_container = ctk.CTkFrame(area, fg_color="transparent"); body_container.pack(fill="both", expand=True)
         self.body_canvas = tk.Canvas(body_container, highlightthickness=0, bd=0, background=DARK_BG2)
         self.body_canvas.pack(side="left", fill="both", expand=True)
@@ -2054,7 +2054,7 @@ class App(ctk.CTk):
         self.rows_frame = ctk.CTkFrame(self.body_canvas, fg_color=DARK_BG2)
         self.body_window = self.body_canvas.create_window((0, 0), window=self.rows_frame, anchor="nw")
 
-        # Scroll H
+                  
         self.xscroll = ctk.CTkScrollbar(area, orientation="horizontal", command=lambda *a: (self.header_canvas.xview(*a), self.body_canvas.xview(*a)))
         self.xscroll.pack(side="bottom", fill="x", pady=(6, 0))
         self.header_canvas.configure(xscrollcommand=lambda a,b: self.xscroll.set(a,b))
@@ -2066,7 +2066,7 @@ class App(ctk.CTk):
         self._bind_mousewheel(self.body_canvas)
         self._build_header(initial=True)
 
-    # ===== Shortcuts =====
+                           
     def open_shortcuts_overlay(self, event=None):
         if self.shortcuts_window and self.shortcuts_window.winfo_exists():
             try:
@@ -2085,13 +2085,13 @@ class App(ctk.CTk):
         self.bind_all("<Control-Shift-N>", lambda e: self.new_flow_blank())
         self.bind_all("<Control-t>", lambda e: self.open_templates_dialog())
         self.bind_all("<Control-Shift-T>", lambda e: self.save_flow_as_template())
-        # Undo / Redo
+                     
         self.bind_all("<Control-z>", lambda e: self.undo_action())
         self.bind_all("<Control-y>", lambda e: self.redo_action())
         self.bind_all("<Control-Shift-Z>", lambda e: self.redo_action())
         self.bind_all("<F1>", self.open_shortcuts_overlay)
 
-    # ===== Undo/Redo =====
+                           
     def _serialize_project(self) -> dict:
         current_task = self._get_task()
         current_task_id = current_task.id if current_task else None
@@ -2136,7 +2136,7 @@ class App(ctk.CTk):
 
         self.current_task_id = desired_task_id or (self.project.tasks[0].id if self.project.tasks else None)
         self.selected_field_ids = {fid for fid in state_selection if fid in valid_field_ids}
-        # ajustar campos Objeto
+                               
         for t in self.project.tasks:
             for f in t.fields:
                 if f.ftype == "Objeto":
@@ -2145,7 +2145,7 @@ class App(ctk.CTk):
                     f.obj_type = self.project.object_type; f.name = self.project.object_type
                     f.name_lock_reason = "objeto"; f.name_locked = True
         
-        self._rebuild_metadata_cache() # Atualiza o cache após carregar
+        self._rebuild_metadata_cache()                                 
 
         self._refresh_flow_label(); self._build_header(initial=True); self._refresh_task_combo(); self._refresh_rows()
         if self.sim_window and self.sim_window.winfo_exists():
@@ -2183,7 +2183,7 @@ class App(ctk.CTk):
         except Exception as e:
             messagebox.showerror("Redo", f"Falha ao refazer.\n\n{e}")
             
-    # ===== Persistência de Edição =====
+                                        
     def _commit_active_edits(self):
         """Salva explicitamente o conteúdo do widget focado no modelo de dados."""
         try:
@@ -2310,7 +2310,7 @@ class App(ctk.CTk):
         except Exception:
             pass
 
-    # ===== Persistência de layout =====
+                                        
     def _load_json(self) -> dict:
         try:
             if os.path.exists(CONFIG_PATH):
@@ -2347,7 +2347,7 @@ class App(ctk.CTk):
         try: return int(data.get("col_gap", default))
         except Exception: return default
 
-    # ===== Geometria/scroll =====
+                                  
     def _col_positions(self, cols_override: Optional[List[Tuple[str, str, int]]] = None) -> List[Tuple[str, int, int]]:
         cols = cols_override or self.cols
         x = 0; gap = int(self.col_gap); out = []
@@ -2363,7 +2363,7 @@ class App(ctk.CTk):
         return sum(max(MIN_W.get(k, 60), int(w)) for k, _, w in cols) + max(0, len(cols)-1)*gap
 
     def _on_body_viewport_resize(self, event=None):
-        # DEBOUNCE: Aguarda 20ms para evitar processamento excessivo durante arraste
+                                                                                    
         if self._resize_timer:
             self.after_cancel(self._resize_timer)
         self._resize_timer = self.after(20, self._perform_resize_layout)
@@ -2371,7 +2371,7 @@ class App(ctk.CTk):
     def _perform_resize_layout(self):
         self._resize_rows()
         self._resize_header()
-        # rebuild_resizers=False evita recriar widgets desnecessariamente durante resize
+                                                                                        
         self._apply_positions(self._col_positions(), rebuild_resizers=False)
         self._resize_timer = None
 
@@ -2380,21 +2380,21 @@ class App(ctk.CTk):
         viewport_w = max(1, self.body_canvas.winfo_width())
         inner_w = max(total_w, viewport_w)
 
-        # GUARDA CONDICIONAL: Só aplica configure se o scrollregion mudou
+                                                                         
         new_region = (0, 0, total_w, self.header_h)
-        # Converte para string para comparação segura com o retorno do Tcl/Tk
+                                                                             
         current_region_str = str(self.header_canvas.cget("scrollregion")).replace('"', '')
         new_region_str = f"0 0 {total_w} {self.header_h}"
 
         if current_region_str != new_region_str:
             self.header_canvas.configure(scrollregion=new_region)
 
-        # GUARDA CONDICIONAL: Só redimensiona a janela interna se necessário
+                                                                            
         current_inner_w = float(self.header_canvas.itemcget(self.header_window, "width"))
-        if abs(current_inner_w - inner_w) > 1: # Tolerância de 1px
+        if abs(current_inner_w - inner_w) > 1:                    
             self.header_canvas.itemconfig(self.header_window, width=inner_w, height=self.header_h)
 
-        # Sincroniza largura da viewport
+                                        
         if int(self.header_canvas.cget("width")) != int(viewport_w):
             self.header_canvas.configure(width=viewport_w)
 
@@ -2406,7 +2406,7 @@ class App(ctk.CTk):
         bbox = self.body_canvas.bbox(self.body_window)
         height = max(bbox[3] if bbox else 0, self.body_canvas.winfo_height())
 
-        # GUARDA CONDICIONAL: Impede loop de eventos no scrollregion
+                                                                    
         new_region = (0, 0, total_w, height)
         current_region_str = str(self.body_canvas.cget("scrollregion")).replace('"', '')
         new_region_str = f"0 0 {total_w} {height}"
@@ -2414,7 +2414,7 @@ class App(ctk.CTk):
         if current_region_str != new_region_str:
             self.body_canvas.configure(scrollregion=new_region)
 
-        # GUARDA CONDICIONAL: Impede loop de eventos na largura do item
+                                                                       
         current_inner_w = float(self.body_canvas.itemcget(self.body_window, "width"))
         if abs(current_inner_w - inner_w) > 1:
             self.body_canvas.itemconfig(self.body_window, width=inner_w)
@@ -2422,7 +2422,7 @@ class App(ctk.CTk):
     def _bind_mousewheel(self, widget: tk.Widget):
         widget.bind_all("<MouseWheel>", lambda e: self._on_mousewheel(e), add="+")
         widget.bind_all("<Shift-MouseWheel>", lambda e: self._on_hwheel(e), add="+")
-        # Linux
+               
         widget.bind_all("<Button-4>", lambda e: self._on_mousewheel(e), add="+")
         widget.bind_all("<Button-5>", lambda e: self._on_mousewheel(e), add="+")
         widget.bind_all("<Shift-Button-4>", lambda e: self._on_hwheel(e), add="+")
@@ -2434,7 +2434,7 @@ class App(ctk.CTk):
         self.header_canvas.xview_scroll(-1 if getattr(e, "delta", 0) > 0 else 1, "units")
         self.body_canvas.xview_scroll(-1 if getattr(e, "delta", 0) > 0 else 1, "units")
 
-    # ===== Header =====
+                        
     def _build_header(self, initial: bool = False):
         if initial:
             for key, x, w in self._col_positions():
@@ -2523,7 +2523,7 @@ class App(ctk.CTk):
         self.cols[idx] = (key, label, est)
         self._apply_positions(self._col_positions(), rebuild_resizers=True); self._save_cols_config()
 
-    # ===== Layout dialogs =====
+                                
     def open_columns_dialog(self):
         win = ctk.CTkToplevel(self); win.title("Largura das colunas")
         self._center_toplevel(win, 520, 520)
@@ -2586,7 +2586,7 @@ class App(ctk.CTk):
         self._save_cols_config()
         messagebox.showinfo("Layout", "Larguras e espaçamento restaurados.")
 
-    # ===== Gerenciador de Tarefas =====
+                                        
     def open_tasks_dialog(self):
         win = ctk.CTkToplevel(self)
         win.title("Tarefas do fluxo")
@@ -2725,7 +2725,7 @@ class App(ctk.CTk):
         render()
         win.after(100, entry_new_task.focus)
 
-    # ===== Otimização de Performance ao mover campos =====
+                                                           
     def _move_field(self, field_id: str, delta: int):
         task = self._get_task()
         if not task:
@@ -2741,30 +2741,30 @@ class App(ctk.CTk):
         if 0 <= new_idx < len(fields):
             self._push_undo()
 
-            # 1. Move no modelo de dados
+                                        
             fields[idx], fields[new_idx] = fields[new_idx], fields[idx]
 
-            # 2. Move o widget da linha na lista de widgets da UI
+                                                                 
             row_widget = self._rows.pop(idx)
             self._rows.insert(new_idx, row_widget)
 
-            # 3. Re-empacota os widgets na nova ordem (muito mais rápido que destruir e recriar)
+                                                                                                
             for w in self._rows:
                 w.pack_forget()
             for w in self._rows:
                 w.pack(fill="x", pady=0)
 
-            # 4. Reconstrói o mapeamento de células de forma segura
+                                                                   
             temp_cells = list(self._row_cells.values())
             moved_cell_dict = temp_cells.pop(idx)
             temp_cells.insert(new_idx, moved_cell_dict)
             self._row_cells = {i: d for i, d in enumerate(temp_cells)}
 
-            # O rebuild do cache não é estritamente necessário aqui, mas não custa.
+                                                                                   
             self._rebuild_metadata_cache()
 
 
-    # ===== Edição de linhas =====
+                                  
     def _refresh_rows(self):
         for w in self.rows_frame.winfo_children(): w.destroy()
         self._rows.clear(); self._row_cells.clear(); self._field_row_map.clear()
@@ -2787,7 +2787,7 @@ class App(ctk.CTk):
         idx = self._rows.index(row)
         widgets = self._row_cells.get(idx, {})
 
-        # 1. Atualiza Cores e Textos Simples (Sem custo)
+                                                        
         bg_color = "#171a1f" if (f.origin_task and f.origin_field) else "transparent"
         try: row.configure(fg_color=bg_color)
         except: pass
@@ -2807,7 +2807,7 @@ class App(ctk.CTk):
                         if isinstance(lbl, ctk.CTkLabel):
                             lbl.configure(text=summary)
 
-        # 2. Atualiza Checkboxes
+                                
         for key, attr in [("obrig", "required"), ("soleit", "readonly")]:
             if key in widgets:
                 for child in widgets[key].winfo_children():
@@ -2818,7 +2818,7 @@ class App(ctk.CTk):
                         if key == "soleit" and f.ftype == "Informativo": child.configure(state="disabled")
                         elif key == "soleit": child.configure(state="normal")
 
-        # 3. Atualiza Nome e Observações (Sempre Entry, seguro atualizar)
+                                                                         
         for key, attr in [("obs", "note"), ("campo", "name")]:
             if key in widgets:
                 for child in widgets[key].winfo_children():
@@ -2830,8 +2830,8 @@ class App(ctk.CTk):
                                 child.delete(0, "end")
                                 child.insert(0, val)
 
-        # 4. CRÍTICO: Recria a Célula de Opções ('opts') se o widget não bater com o tipo
-        # Isso evita o lag de tentar adaptar widgets incompatíveis
+                                                                                         
+                                                                  
         if "opts" in widgets:
             cell_frame = widgets["opts"]
             children = cell_frame.winfo_children()
@@ -2848,15 +2848,15 @@ class App(ctk.CTk):
                 elif f.ftype != "Objeto" and not is_entry: needs_rebuild = True
 
             if needs_rebuild:
-                # Limpa célula
+                              
                 for child in children: child.destroy()
                 
-                # Recria widget correto
+                                       
                 if f.ftype == "Objeto":
                     label = f"Objeto do fluxo: {self.project.object_type or '(defina em Objetos > Tipo...)'}"
                     btn = ctk.CTkButton(cell_frame, text=label + "  (Esquema…)", command=self.open_object_schema_editor)
                     btn.pack(fill="both", expand=True)
-                    # Rebind menu context
+                                         
                     btn.bind("<Button-3>", lambda e: self._show_context_menu(e, f))
                 else:
                     eopt = ctk.CTkEntry(cell_frame)
@@ -2865,7 +2865,7 @@ class App(ctk.CTk):
                     eopt.bind("<FocusOut>", lambda _=None, w=eopt: (self._push_undo(), setattr(f, "options", w.get())))
                     eopt.bind("<Button-3>", lambda e: self._show_context_menu(e, f))
             else:
-                # Se o widget já é do tipo certo, só atualiza o valor
+                                                                     
                 if children and isinstance(children[0], (ctk.CTkEntry, tk.Entry)):
                     w = children[0]
                     if self.focus_get() != w:
@@ -2875,7 +2875,7 @@ class App(ctk.CTk):
                             w.delete(0, "end")
                             w.insert(0, val)
 
-        # 5. Sincroniza o Menu de Tipo
+                                      
         if "tipo" in widgets:
             for child in widgets["tipo"].winfo_children():
                 if isinstance(child, ctk.CTkOptionMenu):
@@ -2894,7 +2894,7 @@ class App(ctk.CTk):
         if f.id:
             self._field_row_map[f.id] = row
         
-        # Função de callback para o menu de contexto. "Congela" o campo atual.
+                                                                              
         show_menu_func = lambda e, field_obj=f: self._show_context_menu(e, field_obj)
         row.bind("<Button-3>", show_menu_func)
 
@@ -2907,7 +2907,7 @@ class App(ctk.CTk):
             cont.bind("<Button-3>", show_menu_func)
             return cont
 
-        # move
+              
         cmove = cell("move")
         btn_frm = ctk.CTkFrame(cmove, fg_color="transparent")
         btn_frm.pack(expand=True)
@@ -2919,14 +2919,14 @@ class App(ctk.CTk):
         btn_down.pack(side="left")
         btn_down.bind("<Button-3>", show_menu_func)
 
-        # sel
+             
         cs = cell("sel")
         v = tk.BooleanVar(value=(f.id in self.selected_field_ids))
         chk = ctk.CTkCheckBox(cs, text="", variable=v, command=lambda fid=f.id, var=v: self._toggle_select(fid, var.get()))
         chk.pack(expand=True)
         chk.bind("<Button-3>", show_menu_func)
 
-        # nome
+              
         ce = cell("campo")
         name_disabled = (f.name_lock_reason in ("objeto","origem")) or f.name_locked
         e = ctk.CTkEntry(ce); e.insert(0, f.name or "")
@@ -2936,17 +2936,17 @@ class App(ctk.CTk):
         if not name_disabled:
             e.bind("<FocusOut>", lambda _=None, w=e: self._on_field_name_changed(t.id, f, w.get()))
 
-        # tipo
+              
         ct = cell("tipo")
         om = ctk.CTkOptionMenu(ct, values=TYPE_VALUES, command=lambda *_: self._on_change_type(f, om.get()))
         base = _solid_color(); om.configure(fg_color=base, button_color=base, button_hover_color=base)
         om.set(f.ftype); om.pack(fill="both", expand=True)
         om.bind("<Button-3>", show_menu_func)
-        # O ctk.CTkOptionMenu é complexo, então vinculamos seus filhos também por segurança
+                                                                                           
         for child in om.winfo_children():
             child.bind("<Button-3>", show_menu_func)
 
-        # origem
+                
         co = cell("origem")
         origem_label = self._origin_summary(f)
         if f.origin_task and f.origin_field: origem_label = "🔗 " + origem_label
@@ -2954,7 +2954,7 @@ class App(ctk.CTk):
         btn_origin.pack(fill="both", expand=True)
         btn_origin.bind("<Button-3>", show_menu_func)
 
-        # regras
+                
         cr = cell("regras")
         summary = self._cond_summary(f)
         rule_frame = ctk.CTkFrame(cr, fg_color="transparent", corner_radius=6)
@@ -2972,7 +2972,7 @@ class App(ctk.CTk):
         rule_frame.bind("<Button-3>", show_menu_func)
         rule_label.bind("<Button-3>", show_menu_func)
 
-        # flags
+               
         cobr = cell("obrig")
         var_req = tk.BooleanVar(value=f.required)
         chk_req = ctk.CTkCheckBox(cobr, text="", variable=var_req, command=lambda: (self._push_undo(), setattr(f, "required", var_req.get())))
@@ -2988,7 +2988,7 @@ class App(ctk.CTk):
         chk_ro.pack(expand=True)
         chk_ro.bind("<Button-3>", show_menu_func)
 
-        # opções
+                
         copts = cell("opts")
         if f.ftype == "Objeto":
             label = f"Objeto do fluxo: {self.project.object_type or '(defina em Objetos > Tipo...)'}"
@@ -3000,13 +3000,13 @@ class App(ctk.CTk):
             eopt.bind("<FocusOut>", lambda _=None, w=eopt: (self._push_undo(), setattr(f, "options", w.get())))
             eopt.bind("<Button-3>", show_menu_func)
 
-        # observações
+                     
         cobs = cell("obs")
         eobs = ctk.CTkEntry(cobs); eobs.insert(0, f.note or ""); eobs.pack(fill="both", expand=True)
         eobs.bind("<FocusOut>", lambda _=None, w=eobs: (self._push_undo(), setattr(f, "note", w.get())))
         eobs.bind("<Button-3>", show_menu_func)
 
-        # delete
+                
         cdel = cell("del")
         btn_del = ctk.CTkButton(cdel, text="x", command=lambda fid=f.id: self._delete_field(fid))
         btn_del.pack(expand=True)
@@ -3043,7 +3043,7 @@ class App(ctk.CTk):
             try: self.sim_window.on_model_changed()
             except Exception: pass
 
-    # ===== Copiar/Colar Campos =====
+                                     
     def _copy_selected_fields(self):
         self._commit_active_edits()
         if not self.selected_field_ids:
@@ -3069,7 +3069,7 @@ class App(ctk.CTk):
                 fields_to_copy.append(field_data)
         
         if fields_to_copy:
-            # Armazena a tarefa de origem junto com os campos
+                                                             
             self._clipboard = {
                 "source_task_id": current_task.id,
                 "fields": fields_to_copy
@@ -3080,7 +3080,7 @@ class App(ctk.CTk):
     def _open_paste_dialog(self) -> Optional[str]:
         """Abre um diálogo para o usuário escolher o tipo de colagem. Retorna 'copy', 'origin', ou None."""
         win = ctk.CTkToplevel(self); win.title("Opções de Colagem")
-        win.transient(self) # Garante que a janela abra no monitor correto
+        win.transient(self)                                               
         self._center_toplevel(win, 480, 200)
         win.grab_set()
 
@@ -3200,15 +3200,15 @@ class App(ctk.CTk):
                 origin_field=origin_field_id,
                 name_locked=True,
                 name_lock_reason="origem",
-                readonly=True, # Comportamento padrão seguro
-                required=False, # Comportamento padrão seguro
-                cond=[] # Condições não são herdadas ao colar com origem
+                readonly=True,                              
+                required=False,                              
+                cond=[]                                                 
             )
             target_task.fields.append(new_field)
             
         messagebox.showinfo("Colar", f"{len(fields_to_paste)} campo(s) colado(s) com vínculo à origem.")
 
-    # ===== Helpers de dados =====
+                                  
     def _refresh_flow_label(self):
         obj = f" | Objeto: {self.project.object_type}" if self.project.object_type else ""
         self.lbl_flow.configure(text=f"Fluxo: {self.project.flow_name}{obj}")
@@ -3381,16 +3381,16 @@ class App(ctk.CTk):
         if not t: return "Sem regras"
         return ("Sem regras" if not f.cond else "Exibir quando " + self._cond_summary_for_task(t, f))
 
-    # ===== Tipo/ReadOnly =====
+                               
     def _on_change_type(self, f: Field, new_type: str):
         self._commit_row_data(f)
         prev = f.ftype
         if new_type == prev: return
 
-        # Logica de negócio
+                           
         self._push_undo()
         
-        # Regras especiais de Objeto
+                                    
         if new_type == "Objeto":
             if f.origin_task or f.origin_field:
                 messagebox.showwarning("Objeto", "Campo Objeto não pode ter origem."); self._update_single_row_widgets(f); return
@@ -3418,15 +3418,15 @@ class App(ctk.CTk):
         if new_type == "Informativo": f.readonly = True
         if new_type not in LIST_FIELD_TYPES and new_type != "Informativo": f.options = ""
 
-        # Se virou Anexo, abre editor (opcional)
+                                                
         if new_type == "Anexo" and prev != "Anexo":
             self._open_attachment_type_editor(f)
 
-        # Reconstrói cache se o nome mudou (ex: virou Objeto)
+                                                             
         if f.name_locked or prev == "Objeto":
             self._rebuild_metadata_cache()
 
-        # CHAMA A NOVA ATUALIZAÇÃO OTIMIZADA
+                                            
         self._update_single_row_widgets(f)
 
     def _set_readonly(self, f: Field, val: bool):
@@ -3437,7 +3437,7 @@ class App(ctk.CTk):
         else:
             f.readonly = val
 
-    # ===== Operações de adicionar/excluir campo =====
+                                                      
     def _add_field(self):
         self._commit_active_edits()
         if not self.project.tasks:
@@ -3480,13 +3480,13 @@ class App(ctk.CTk):
             row_widget_to_remove = self._rows.pop(field_to_remove_idx)
             row_widget_to_remove.destroy()
             self._row_cells.pop(field_to_remove_idx, None)
-            # Reindexa o dicionário de células
+                                              
             new_row_cells = {}
             for i, (old_idx, value) in enumerate(self._row_cells.items()):
                 new_row_cells[i] = value
             self._row_cells = new_row_cells
         else:
-            self._refresh_rows() # Fallback para garantir consistência
+            self._refresh_rows()                                      
 
         self._rebuild_metadata_cache()
         
@@ -3494,7 +3494,7 @@ class App(ctk.CTk):
             try: self.sim_window.on_model_changed()
             except Exception: pass
 
-    # ===== Ações do Menu de Contexto =====
+                                           
     def _show_context_menu(self, event, target_field: Field):
         """Exibe o menu de contexto para um campo específico."""
         self._commit_active_edits()
@@ -3537,10 +3537,10 @@ class App(ctk.CTk):
             id=_uid(), name=f"{field.name} (Cópia)", ftype=field.ftype,
             required=field.required, readonly=field.readonly,
             info=field.info, options=field.options, note=field.note,
-            origin_task=None, origin_field=None, # Duplicatas são independentes
+            origin_task=None, origin_field=None,                               
             name_locked=field.name_locked, name_lock_reason=field.name_lock_reason,
             obj_type=field.obj_type,
-            cond=[Condition(**vars(c)) for c in field.cond] # Cópia profunda das condições
+            cond=[Condition(**vars(c)) for c in field.cond]                               
         )
         task.fields.insert(original_index + 1, new_field)
         self._rebuild_metadata_cache()
@@ -3555,7 +3555,7 @@ class App(ctk.CTk):
             task.fields.remove(field)
             task.fields.insert(0, field)
             self._refresh_rows()
-        except ValueError: pass # Campo não encontrado
+        except ValueError: pass                       
 
     def _move_field_to_end(self, field: Field):
         """Move um campo para o fim da lista na tarefa atual."""
@@ -3566,7 +3566,7 @@ class App(ctk.CTk):
             task.fields.remove(field)
             task.fields.append(field)
             self._refresh_rows()
-        except ValueError: pass # Campo não encontrado
+        except ValueError: pass                       
 
     def _open_attachment_type_editor(self, field: Field):
         """Abre um diálogo para editar a tag [Tipo de Doc.:] na nota de um campo."""
@@ -3576,19 +3576,19 @@ class App(ctk.CTk):
 
         new_content = self._prompt_attachment_types(initial_content)
         if new_content is None:
-            return  # Usuário cancelou
+            return                    
 
         normalized_content = new_content.strip()
 
         self._push_undo()
         new_tag = f"[Tipo de Doc.: {normalized_content}]" if normalized_content else ""
 
-        if match: # Tag já existe
-            if not new_tag: # Novo conteúdo está vazio, remove a tag antiga
+        if match:                
+            if not new_tag:                                                
                 field.note = (field.note[:match.start()] + field.note[match.end():]).strip()
-            else: # Substitui a tag antiga pela nova
+            else:                                   
                 field.note = field.note[:match.start()] + new_tag + field.note[match.end():]
-        elif new_tag: # Tag não existe e novo conteúdo foi fornecido
+        elif new_tag:                                               
             field.note = (new_tag + " " + field.note).strip()
         
         self._update_single_row_widgets(field)
@@ -3677,7 +3677,7 @@ class App(ctk.CTk):
         self.wait_window(win)
         return output["value"]
         
-    # ===== Visão Planilha (HTML) =====
+                                       
     def _build_overview_html(self, query: str, collapsed: Set[str]) -> str:
         q = (query or "").lower()
         
@@ -3799,7 +3799,7 @@ class App(ctk.CTk):
 
         win = ctk.CTkToplevel(self); win.title("Visão geral — Planilha (HTML)")
         self._center_toplevel(win, 1200, 720, transient=False)
-        win.resizable(True, True) # CORREÇÃO: Permite que a janela seja maximizada
+        win.resizable(True, True)                                                 
         win.grab_set()
 
         win.grid_columnconfigure(0, weight=1); win.grid_rowconfigure(2, weight=1)
@@ -3883,7 +3883,7 @@ class App(ctk.CTk):
         e_search.bind("<KeyRelease>", lambda *_: render())
         render()
 
-    # ===== Exportação da visão geral para XLSX =====
+                                                     
     def _export_overview_xlsx(self, q: str, collapsed: Set[str]):
         try:
             import openpyxl
@@ -3915,7 +3915,7 @@ class App(ctk.CTk):
                 if not query or any(query in (c or "").lower() for c in row):
                     task_rows.append(row[1:])
 
-            # Lógica similar à da renderização HTML
+                                                   
             if not task_rows and not (query and query in t.name.lower()):
                  if not query and not task_rows: pass
                  else: continue
@@ -3945,10 +3945,10 @@ class App(ctk.CTk):
         ws.freeze_panes = "A2"
         wb.save(path); messagebox.showinfo("Exportar", "Visão geral exportada (XLSX).")
 
-    # ===== Objetos / Esquema =====
+                                   
     def open_flow_object_type_dialog(self) -> bool:
         win = ctk.CTkToplevel(self); win.title("Tipo do objeto do fluxo")
-        win.transient(self) # Fix para múltiplos monitores
+        win.transient(self)                               
         self._center_toplevel(win, 520, 190)
         win.grab_set()
 
@@ -3974,7 +3974,7 @@ class App(ctk.CTk):
             ok = self.open_flow_object_type_dialog()
             if not ok: return
         win = ctk.CTkToplevel(self); win.title(f"Esquema do objeto — {self.project.object_type}")
-        win.transient(self) # Fix para múltiplos monitores
+        win.transient(self)                               
         self._center_toplevel(win, 820, 560)
         win.grab_set()
 
@@ -4000,7 +4000,7 @@ class App(ctk.CTk):
 
         def edit(ref: Optional[ObjectFieldDef]):
             dlg = ctk.CTkToplevel(win); dlg.title("Campo do objeto")
-            dlg.transient(win) # Fix para múltiplos monitores
+            dlg.transient(win)                               
             self._center_toplevel(dlg, 640, 360)
             dlg.grab_set()
 
@@ -4075,7 +4075,7 @@ class App(ctk.CTk):
         for i, ofd in enumerate(self.project.object_schema): ofd.order = i
         render()
 
-    # ===== Import/Export esquema =====
+                                       
     def import_object_schema_xlsx(self):
         try: import openpyxl
         except Exception: messagebox.showwarning("Importar XLSX", "Instale openpyxl. Ex.: py -m pip install openpyxl"); return
@@ -4181,7 +4181,7 @@ class App(ctk.CTk):
 
         wb.save(path); messagebox.showinfo("Modelo", "Modelo de esquema de objeto salvo (XLSX).")
 
-    # ===== Arquivo / Fluxo =====
+                                 
     def rename_flow(self):
         new = self._prompt_text("Renomear fluxo", "Nome do fluxo:", self.project.flow_name)
         if new is not None:
@@ -4233,7 +4233,7 @@ class App(ctk.CTk):
         except Exception as exc:
             messagebox.showerror("Abrir projeto", f"Falha ao carregar o projeto.\n\n{exc}")
 
-    # ===== XLSX: exportar/importar fluxo =====
+                                               
     def export_flow_to_xlsx(self):
         try:
             import openpyxl
@@ -4338,7 +4338,7 @@ class App(ctk.CTk):
                                 if base_field: f.cond.append(Condition(src_field=base_field.id, op="==", value=value))
             proj.tasks = list(tasks_by_name.values())
             
-            # Rebuild cache for origin mapping
+                                              
             temp_app = App(); temp_app.project = proj; temp_app._rebuild_metadata_cache()
             
             for f, tname, fname in pending_origins:
@@ -4413,10 +4413,10 @@ class App(ctk.CTk):
             for c in range(1, len(headers)+1): ws.cell(row=r, column=c).alignment = Alignment(vertical="top", wrap_text=True)
         wb.save(path); messagebox.showinfo("Modelo", "Modelo salvo (XLSX).")
 
-    # ===== Templates (biblioteca) =====
+                                        
     def open_templates_dialog(self):
         win = ctk.CTkToplevel(self); win.title("Meus templates")
-        win.transient(self) # Fix para múltiplos monitores
+        win.transient(self)                               
         self._center_toplevel(win, 720, 580)
         win.grab_set()
 
@@ -4512,7 +4512,7 @@ class App(ctk.CTk):
                 self.store.save_template(name, self.project, replace=False)
             messagebox.showinfo("Templates", "Template salvo.")
 
-    # ===== Template embutido: Cadastro =====
+                                             
     def apply_builtin_template_cadastro_confirm(self):
         if not messagebox.askyesno("Aplicar template", "Substituir o fluxo atual por 'Cadastro'?"): return
         self.apply_builtin_template_cadastro()
@@ -4563,13 +4563,13 @@ class App(ctk.CTk):
         self._refresh_flow_label(); self._build_header(initial=True); self._refresh_task_combo(); self._refresh_rows()
         messagebox.showinfo("Templates", "Template 'Cadastro' aplicado.")
 
-    # ===== Origem/Regras/Simulador =====
+                                         
     def open_origin_picker(self, f: Field):
         self._commit_row_data(f)
         if f.ftype == "Objeto":
             messagebox.showwarning("Origem", "Campos do tipo Objeto não suportam origem."); return
         win = ctk.CTkToplevel(self); win.title("Origem do valor")
-        win.transient(self) # Fix para múltiplos monitores
+        win.transient(self)                               
         self._center_toplevel(win, 520, 420)
         win.grab_set()
 
@@ -4582,7 +4582,7 @@ class App(ctk.CTk):
         ctk.CTkLabel(win, text="Campo:").pack(anchor="w", padx=10)
         cmb_f = ctk.CTkComboBox(win, values=["-"], width=420); cmb_f.pack(padx=10, pady=(0, 10))
 
-        # --- Flexibilidade para Campos com "Origem" ---
+                                                        
         flags_frame = ctk.CTkFrame(win, fg_color="transparent")
         flags_frame.pack(pady=4, anchor="w", padx=10)
         
@@ -4656,7 +4656,7 @@ class App(ctk.CTk):
     def open_cond_builder(self, f: Field):
         self._commit_row_data(f)
         win = ctk.CTkToplevel(self); win.title("Regras — quando este campo aparece")
-        win.transient(self) # Fix para múltiplos monitores
+        win.transient(self)                               
         self._center_toplevel(win, 740, 540)
         win.grab_set()
 
@@ -4735,7 +4735,7 @@ class App(ctk.CTk):
         ctk.CTkButton(btn_row, text="Adicionar regra", width=160, command=add_cond).pack(side="right")
         ctk.CTkButton(btn_row, text="Fechar", width=140, command=lambda: (win.destroy(), self._update_single_row_widgets(f))).pack(side="left")
 
-    # ===== Validador de Fluxo =====
+                                    
     def _validation_issue_key(self, task: Task, field: Field, code: str) -> str:
         task_id = getattr(task, "id", "") or ""
         field_id = getattr(field, "id", "") or ""
@@ -4813,7 +4813,7 @@ class App(ctk.CTk):
             command=lambda: (self.validator_ignored.clear(), render_issues()),
         )
 
-        # Apenas a lista de avisos deve expandir
+                                                
         win.grid_rowconfigure(1, weight=1)
 
         def render_issues():
@@ -4946,7 +4946,7 @@ class App(ctk.CTk):
             super().__init__(master)
             self.master = master
             self.title("Simulador de Workflow")
-            self.transient(master)  # Fix para múltiplos monitores
+            self.transient(master)                                
             self._center_toplevel(self, 900, 600, respect_req_size=False)
             self.grab_set()
 
@@ -5066,7 +5066,7 @@ class App(ctk.CTk):
 
         def _goto_dialog(self):
             win = ctk.CTkToplevel(self); win.title("Ir para a tarefa...")
-            win.transient(self) # Fix para múltiplos monitores
+            win.transient(self)                               
             self._center_toplevel(win, 460, 460);
             win.grab_set()
 
@@ -5478,28 +5478,28 @@ class App(ctk.CTk):
             except Exception: pass
             return
         self.sim_window = App.SimWindow(self, self.project, self.current_task_id)
-    # ===== Util =====
+                      
     def _center_toplevel(self, win, width, height, *, transient=True, fade=False, respect_req_size=True):
-        # 1. Configurações iniciais
+                                   
         if transient and win is not self:
             try: win.transient(self)
             except: pass
         try: win.configure(fg_color=DARK_BG2)
         except: pass
 
-        # 2. CORREÇÃO DUAL MONITOR: Centralizar relativo à janela principal
+                                                                           
         try:
-            # Pega as coordenadas e tamanho da janela mãe (App)
+                                                               
             root_x = self.winfo_rootx()
             root_y = self.winfo_rooty()
             root_w = self.winfo_width()
             root_h = self.winfo_height()
 
-            # Calcula o centro relativo
+                                       
             x = root_x + (root_w - width) // 2
             y = root_y + (root_h - height) // 2
         except:
-            # Fallback de segurança para o centro da tela principal
+                                                                   
             try:
                 screen_w = win.winfo_screenwidth()
                 screen_h = win.winfo_screenheight()
@@ -5508,15 +5508,15 @@ class App(ctk.CTk):
             except:
                 x, y = 0, 0
 
-        # 3. Aplica geometria e estilo
+                                      
         win.geometry(f"{width}x{height}+{int(x)}+{int(y)}")
 
-        # CORREÇÃO: Aplica a barra escura ENQUANTO a janela ainda está oculta
-        # Isso evita o "flash" branco da barra de título do Windows
+                                                                             
+                                                                   
         try: self._set_dark_title_bar(win)
         except: pass
 
-        # Só agora mostra a janela, já estilizada
+                                                 
         win.deiconify()
         win.attributes("-alpha", 1.0)
 
@@ -5591,7 +5591,7 @@ class App(ctk.CTk):
 
     def _prompt_text(self, title: str, label: str, initial: str = "") -> Optional[str]:
         win = ctk.CTkToplevel(self); win.title(title)
-        win.transient(self) # Fix para múltiplos monitores
+        win.transient(self)                               
         self._center_toplevel(win, 420, 160)
         win.grab_set()
 
@@ -5600,7 +5600,7 @@ class App(ctk.CTk):
         out={"v":None}
         def ok():
             val = e.get()
-            # Distingue entre 'cancelar' (None) e 'OK com texto vazio' ("")
+                                                                           
             out["v"] = val if val is not None else ""
             win.destroy()
         def cancel():
@@ -5623,12 +5623,12 @@ class App(ctk.CTk):
         """Força a barra de título da janela a usar o modo escuro no Windows."""
         _apply_dark_title_bar(win)
 
-# ---- Main ----
+                
 if __name__ == "__main__":
     try:
         app = App()
-        # --- SPLASH SCREEN END ---
-        # Fecha a tela de carregamento do PyInstaller se ela estiver ativa
+                                   
+                                                                          
         if importlib.util.find_spec("pyi_splash"):
             import pyi_splash
             if pyi_splash.is_alive():
